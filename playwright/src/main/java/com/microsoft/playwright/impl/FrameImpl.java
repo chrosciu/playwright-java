@@ -406,6 +406,40 @@ public class FrameImpl extends ChannelOwner implements Frame {
     return connection.getExistingObject(jsonResponse.get("guid").getAsString());
   }
 
+  Waitable<Response> navigateImplAsync(String url, NavigateOptions options) {
+    if (options == null) {
+      options = new NavigateOptions();
+    }
+    JsonObject params = gson().toJsonTree(options).getAsJsonObject();
+    params.addProperty("url", url);
+    Waitable<JsonElement> result = sendMessageAsync("goto", params);
+
+    return new Waitable<Response>() {
+      @Override
+      public boolean isDone() {
+        return result.isDone();
+      }
+
+      @Override
+      public Response get() {
+        JsonObject jsonResponse = result.get().getAsJsonObject().getAsJsonObject("response");
+        if (jsonResponse == null) {
+          return null;
+        }
+        return connection.getExistingObject(jsonResponse.get("guid").getAsString());
+      }
+
+      @Override
+      public void dispose() {
+        result.dispose();
+      }
+    };
+  }
+
+  void poll() {
+    connection.processOneMessage();
+  }
+
   @Override
   public void hover(String selector, HoverOptions options) {
     withLogging("Frame.hover", () -> hoverImpl(selector, options));

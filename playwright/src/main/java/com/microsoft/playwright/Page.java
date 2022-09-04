@@ -16,6 +16,7 @@
 
 package com.microsoft.playwright;
 
+import com.microsoft.playwright.impl.Waitable;
 import com.microsoft.playwright.options.*;
 import java.nio.file.Path;
 import java.util.*;
@@ -4302,6 +4303,12 @@ public interface Page extends AutoCloseable {
   default Response navigate(String url) {
     return navigate(url, null);
   }
+
+  default Waitable<Response> navigateAsync(String url) {
+    return navigateAsync(url, null);
+  }
+
+  void poll();
   /**
    * Returns the main resource response. In case of multiple redirects, the navigation will resolve with the first
    * non-redirect response.
@@ -4332,6 +4339,8 @@ public interface Page extends AutoCloseable {
    * href="https://developer.mozilla.org/en-US/docs/Web/API/URL/URL">{@code new URL()}</a> constructor.
    */
   Response navigate(String url, NavigateOptions options);
+
+  Waitable<Response> navigateAsync(String url, NavigateOptions options);
   /**
    * This method hovers over an element matching {@code selector} by performing the following steps:
    * <ol>

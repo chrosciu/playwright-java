@@ -18,7 +18,7 @@ package com.microsoft.playwright.impl;
 
 import java.util.function.Function;
 
-interface Waitable<T> {
+public interface Waitable<T> {
   boolean isDone();
   T get();
   void dispose();

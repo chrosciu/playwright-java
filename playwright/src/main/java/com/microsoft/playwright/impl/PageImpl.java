@@ -801,6 +801,16 @@ public class PageImpl extends ChannelOwner implements Page {
   }
 
   @Override
+  public Waitable<Response> navigateAsync(String url, NavigateOptions options) {
+    return withLogging("Page.navigate", () -> mainFrame.navigateImplAsync(url, convertType(options, Frame.NavigateOptions.class)));
+  }
+
+  @Override
+  public void poll() {
+    mainFrame.poll();
+  }
+
+  @Override
   public void hover(String selector, HoverOptions options) {
     withLogging("Page.hover", () -> mainFrame.hoverImpl(selector, convertType(options, Frame.HoverOptions.class)));
   }
