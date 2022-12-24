@@ -855,6 +855,10 @@ public class FrameImpl extends ChannelOwner implements Frame {
     waitForLoadStateImpl(convertType(state, WaitUntilState.class), options);
   }
 
+  Waitable<Void> waitForLoadStateImplAsync(LoadState state, WaitForLoadStateOptions options) {
+    return waitForLoadStateImplAsync(convertType(state, WaitUntilState.class), options);
+  }
+
   private void waitForLoadStateImpl(WaitUntilState state, WaitForLoadStateOptions options) {
     if (options == null) {
       options = new WaitForLoadStateOptions();
@@ -868,6 +872,21 @@ public class FrameImpl extends ChannelOwner implements Frame {
     waitables.add(page.createWaitForCloseHelper());
     waitables.add(page.createWaitableTimeout(options.timeout));
     runUntil(() -> {}, new WaitableRace<>(waitables));
+  }
+
+  private Waitable<Void> waitForLoadStateImplAsync(WaitUntilState state, WaitForLoadStateOptions options) {
+    if (options == null) {
+      options = new WaitForLoadStateOptions();
+    }
+    if (state == null) {
+      state = LOAD;
+    }
+
+    List<Waitable<Void>> waitables = new ArrayList<>();
+    waitables.add(new WaitForLoadStateHelper(state));
+    waitables.add(page.createWaitForCloseHelper());
+    waitables.add(page.createWaitableTimeout(options.timeout));
+    return new WaitableRace<>(waitables);
   }
 
   private class WaitForLoadStateHelper implements Waitable<Void>, Consumer<WaitUntilState> {

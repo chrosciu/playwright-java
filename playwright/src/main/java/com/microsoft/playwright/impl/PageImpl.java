@@ -17,6 +17,7 @@
 package com.microsoft.playwright.impl;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.*;
@@ -495,11 +496,23 @@ public class PageImpl extends ChannelOwner implements Page {
     return withWaitLogging("Page.waitForPopup", () -> waitForPopupImpl(options, code));
   }
 
+  @Override
+  public Waitable<Page> waitForPopupAsync(WaitForPopupOptions options, Runnable code) {
+    return withWaitLogging("Page.waitForPopup", () -> waitForPopupImplAsync(options, code));
+  }
+
   private Page waitForPopupImpl(WaitForPopupOptions options, Runnable code) {
     if (options == null) {
       options = new WaitForPopupOptions();
     }
     return waitForEventWithTimeout(EventType.POPUP, code, options.predicate, options.timeout);
+  }
+
+  private Waitable<Page> waitForPopupImplAsync(WaitForPopupOptions options, Runnable code) {
+    if (options == null) {
+      options = new WaitForPopupOptions();
+    }
+    return waitForEventWithTimeoutAsync(EventType.POPUP, code, options.predicate, options.timeout);
   }
 
   @Override
@@ -532,6 +545,15 @@ public class PageImpl extends ChannelOwner implements Page {
     waitables.add(createWaitForCloseHelper());
     waitables.add(createWaitableTimeout(timeout));
     return runUntil(code, new WaitableRace<>(waitables));
+  }
+
+  private <T> Waitable<T> waitForEventWithTimeoutAsync(EventType eventType, Runnable code, Predicate<T> predicate, Double timeout) {
+    code.run();
+    List<Waitable<T>> waitables = new ArrayList<>();
+    waitables.add(new WaitableEvent<>(listeners, eventType, predicate));
+    waitables.add(createWaitForCloseHelper());
+    waitables.add(createWaitableTimeout(timeout));
+    return new WaitableRace<>(waitables);
   }
 
   @Override
@@ -807,7 +829,7 @@ public class PageImpl extends ChannelOwner implements Page {
 
   @Override
   public void poll() {
-    mainFrame.poll();
+    connection.processOneMessage();
   }
 
   @Override
@@ -948,6 +970,11 @@ public class PageImpl extends ChannelOwner implements Page {
   }
 
   @Override
+  public Waitable<Response> reloadAsync(ReloadOptions options) {
+    return withLogging("Page.reload", () -> reloadImplAsync(options));
+  }
+
+  @Override
   public APIRequestContextImpl request() {
     return browserContext.request();
   }
@@ -962,6 +989,35 @@ public class PageImpl extends ChannelOwner implements Page {
       return connection.getExistingObject(json.getAsJsonObject("response").get("guid").getAsString());
     }
     return null;
+  }
+
+  private Waitable<Response> reloadImplAsync(ReloadOptions options) {
+    if (options == null) {
+      options = new ReloadOptions();
+    }
+    JsonObject params = gson().toJsonTree(options).getAsJsonObject();
+    Waitable<JsonElement> result = sendMessageAsync("reload", params);
+
+    return new Waitable<Response>() {
+      @Override
+      public boolean isDone() {
+        return result.isDone();
+      }
+
+      @Override
+      public Response get() {
+        JsonObject json = result.get().getAsJsonObject();
+        if (json.has("response")) {
+          return connection.getExistingObject(json.getAsJsonObject("response").get("guid").getAsString());
+        }
+        return null;
+      }
+
+      @Override
+      public void dispose() {
+        result.dispose();
+      }
+    };
   }
 
   @Override
@@ -1282,6 +1338,12 @@ public class PageImpl extends ChannelOwner implements Page {
       mainFrame.waitForLoadStateImpl(state, convertType(options, Frame.WaitForLoadStateOptions.class));
       return null;
     });
+  }
+
+  @Override
+  public Waitable<Void> waitForLoadStateAsync(LoadState state, WaitForLoadStateOptions options) {
+    return withWaitLogging("Page.waitForLoadState",
+      () -> mainFrame.waitForLoadStateImplAsync(state, convertType(options, Frame.WaitForLoadStateOptions.class)));
   }
 
   @Override

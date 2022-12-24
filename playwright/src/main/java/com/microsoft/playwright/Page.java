@@ -4823,11 +4823,17 @@ public interface Page extends AutoCloseable {
   default Response reload() {
     return reload(null);
   }
+
+  default Waitable<Response> reloadAsync() {
+    return reloadAsync(null);
+  }
   /**
    * This method reloads the current page, in the same way as if the user had triggered a browser refresh. Returns the main
    * resource response. In case of multiple redirects, the navigation will resolve with the response of the last redirect.
    */
   Response reload(ReloadOptions options);
+
+  Waitable<Response> reloadAsync(ReloadOptions options);
   /**
    * API testing helper associated with this page. This method returns the same instance as {@link BrowserContext#request
    * BrowserContext.request()} on the page's context. See {@link BrowserContext#request BrowserContext.request()} for more
@@ -6221,6 +6227,10 @@ public interface Page extends AutoCloseable {
   default void waitForLoadState(LoadState state) {
     waitForLoadState(state, null);
   }
+
+  default Waitable<Void> waitForLoadStateAsync(LoadState state) {
+    return waitForLoadStateAsync(state, null);
+  }
   /**
    * Returns when the required load state has been reached.
    *
@@ -6242,6 +6252,10 @@ public interface Page extends AutoCloseable {
    */
   default void waitForLoadState() {
     waitForLoadState(null);
+  }
+
+  default Waitable<Void> waitForLoadStateAsync() {
+    return waitForLoadStateAsync(null);
   }
   /**
    * Returns when the required load state has been reached.
@@ -6271,6 +6285,8 @@ public interface Page extends AutoCloseable {
    * </ul>
    */
   void waitForLoadState(LoadState state, WaitForLoadStateOptions options);
+
+  Waitable<Void> waitForLoadStateAsync(LoadState state, WaitForLoadStateOptions options);
   /**
    * Waits for the main frame navigation and returns the main resource response. In case of multiple redirects, the
    * navigation will resolve with the response of the last redirect. In case of navigation to a different anchor or
@@ -6329,6 +6345,10 @@ public interface Page extends AutoCloseable {
   default Page waitForPopup(Runnable callback) {
     return waitForPopup(null, callback);
   }
+
+  default Waitable<Page> waitForPopupAsync(Runnable callback) {
+    return waitForPopupAsync(null, callback);
+  }
   /**
    * Performs action and waits for a popup {@code Page}. If predicate is provided, it passes [Popup] value into the {@code predicate}
    * function and waits for {@code predicate(page)} to return a truthy value. Will throw an error if the page is closed before the
@@ -6337,6 +6357,8 @@ public interface Page extends AutoCloseable {
    * @param callback Callback that performs the action triggering the event.
    */
   Page waitForPopup(WaitForPopupOptions options, Runnable callback);
+
+  Waitable<Page> waitForPopupAsync(WaitForPopupOptions options, Runnable callback);
   /**
    * Waits for the matching request and returns it. See <a
    * href="https://playwright.dev/java/docs/events#waiting-for-event">waiting for event</a> for more details about events.
